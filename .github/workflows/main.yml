@@ -138,15 +138,12 @@ on:
         default: ""
         required: false
       kernel_android_version:
-        description: "按版本构建的 Android 分支（5.10 必须选 android12 或 android13）"
+        description: "仅构建 5.10 时选择 android12 或 android13；其他版本保持 auto"
         type: choice
         options:
           - auto
           - android12
           - android13
-          - android14
-          - android15
-          - android16
         default: auto
 
       # ==================== Bot-Push 选项 ====================
@@ -193,10 +190,6 @@ jobs:
             6.12) android_version=android16; deduplicate=true ;;
             *) echo "::error::不支持的内核系列: ${BASH_REMATCH[1]}"; exit 1 ;;
           esac
-          if [[ "$ANDROID_CHOICE" != auto && "$ANDROID_CHOICE" != "$android_version" ]]; then
-            echo "::error::$kernel_series 对应 $android_version，不能选择 $ANDROID_CHOICE"
-            exit 1
-          fi
           data_file="data/$android_version/$kernel_series.json"
           echo "data_file=$data_file" >> "$GITHUB_OUTPUT"
           echo "deduplicate_sublevels=$deduplicate" >> "$GITHUB_OUTPUT"
