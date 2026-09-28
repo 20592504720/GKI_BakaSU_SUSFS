@@ -129,7 +129,7 @@ on:
         type: boolean
         default: false
       kernel_version_filter:
-        description: "内核版本，如 6.6.66 或 6.6.X（X 不区分大小写）"
+        description: "内核版本，如 6.6.66 或 6.6.X（X 不区分大小写，以 X 结尾时则构建该内核大版本的所有子版本）"
         type: string
         default: ""
         required: false
