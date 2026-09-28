@@ -30,8 +30,17 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 检查数据同步逻辑
+        run: python -m unittest discover -s tests -p 'test_update_data.py'
+
       - name: 增量更新并校验数据
         run: python scripts/update_data.py
+
+      - name: 验证全部构建矩阵
+        run: |
+          for data_file in data/android*/*.json; do
+            python scripts/prepare_matrix.py "$data_file" > /dev/null
+          done
 
       - name: 提交数据变更
         run: |

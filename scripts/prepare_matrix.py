@@ -88,8 +88,6 @@ def validate_data(
         revision = entry.get("revision")
         if revision is not None:
             _require_string(revision, f"{field}.revision", REVISION_RE)
-        elif kernel_version == "5.10":
-            raise DataError(f"{field}.revision is required for kernel 5.10")
 
     root_lts = data.get("lts")
     if root_lts is not None:

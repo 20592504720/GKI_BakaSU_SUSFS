@@ -363,10 +363,22 @@ jobs:
           retry 4 15 "$REPO" init --depth=1 -u https://android.googlesource.com/kernel/manifest -b "common-${FORMATTED_BRANCH}" --repo-rev=v2.16
 
           # 检查是否为已弃用的分支
-          REMOTE_BRANCH=$(retry 4 15 git ls-remote https://android.googlesource.com/kernel/common "$FORMATTED_BRANCH")
+          REMOTE_BRANCH=$(retry 4 15 git ls-remote --heads https://android.googlesource.com/kernel/common "refs/heads/${FORMATTED_BRANCH}")
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
 
-          if grep -q deprecated <<< $REMOTE_BRANCH; then
+          if [ "${{ inputs.kernel_version }}" = "5.10" ] && [ -n "${{ inputs.revision }}" ] && [ "${{ inputs.os_patch_level }}" != "lts" ]; then
+            RELEASE_TAG="${FORMATTED_BRANCH}_${{ inputs.revision }}"
+            TAG_REF=$(retry 4 15 git ls-remote --tags --refs https://android.googlesource.com/kernel/common "refs/tags/${RELEASE_TAG}")
+            if [ -z "$TAG_REF" ]; then
+              echo "::error::未找到 JSON 指定的发布 tag: $RELEASE_TAG" >&2
+              exit 1
+            fi
+            sed -i "s|revision=\"${FORMATTED_BRANCH}\"|revision=\"refs/tags/${RELEASE_TAG}\"|" "$DEFAULT_MANIFEST_PATH"
+            if ! grep -qF "revision=\"refs/tags/${RELEASE_TAG}\"" "$DEFAULT_MANIFEST_PATH"; then
+              echo "::error::未能在 manifest 中设置 kernel/common 的发布 tag" >&2
+              exit 1
+            fi
+          elif [ -z "$REMOTE_BRANCH" ] && [ -n "$(retry 4 15 git ls-remote --heads https://android.googlesource.com/kernel/common "refs/heads/deprecated/${FORMATTED_BRANCH}")" ]; then
             echo "检测到已弃用的分支: $FORMATTED_BRANCH"
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           elif [ -z "$REMOTE_BRANCH" ]; then
