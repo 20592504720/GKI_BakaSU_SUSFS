@@ -50,7 +50,8 @@ def update_target(android_ver: str, kernel_ver: str,
         release_tags = fetch_latest_release_tags(android_ver, kernel_ver)
         monthly_branches = fetch_monthly_branches(android_ver, kernel_ver)
         for date in all_dates:
-            tag = release_tags.get(date)
+            release = release_tags.get(date)
+            tag = release[0] if release is not None else None
             current = existing_by_date.get(date)
             previous = current.copy() if current is not None else None
             if tag is None:
@@ -62,7 +63,7 @@ def update_target(android_ver: str, kernel_ver: str,
                 if text is None:
                     raise RuntimeError(f"monthly branch has no Makefile: {android_ver}-{kernel_ver}-{date}")
             else:
-                text = fetch_tag_makefile(tag)
+                text = fetch_tag_makefile(*release)
             ver = parse_version(text)
             if ver is None:
                 raise RuntimeError(f"failed to parse Makefile for {tag or date}")
@@ -85,9 +86,15 @@ def update_target(android_ver: str, kernel_ver: str,
         new_dates = [date for date in all_dates if date not in existing_by_date]
         if not new_dates:
             print("  No new months to fetch")
+        monthly_branches = (
+            fetch_monthly_branches(android_ver, kernel_ver) if new_dates else set()
+        )
         for date in new_dates:
             label = f"{android_ver}-{kernel_ver}-{date}"
             print(f"    [{label}] ", end="", flush=True)
+            if date not in monthly_branches:
+                print("not found, skip")
+                continue
             text = fetch_makefile(android_ver, kernel_ver, date, dep_cutoff)
             if text is None:
                 print("not found, skip")

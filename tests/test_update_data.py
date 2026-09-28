@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import urllib.error
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -26,6 +28,7 @@ class ReleaseTagTests(unittest.TestCase):
             (
                 "abc\trefs/tags/android13-5.10-2025-07_r2",
                 "abc\trefs/tags/android13-5.10-2025-07_r10",
+                "commit\trefs/tags/android13-5.10-2025-07_r10^{}",
                 "abc\trefs/tags/android13-5.10-2025-10_r4",
                 "abc\trefs/tags/android12-5.10-2025-07_r99",
             )
@@ -38,8 +41,8 @@ class ReleaseTagTests(unittest.TestCase):
         self.assertEqual(
             tags,
             {
-                "2025-07": "android13-5.10-2025-07_r10",
-                "2025-10": "android13-5.10-2025-10_r4",
+                "2025-07": ("android13-5.10-2025-07_r10", "commit"),
+                "2025-10": ("android13-5.10-2025-10_r4", "abc"),
             },
         )
 
@@ -65,7 +68,7 @@ class ReleaseTagTests(unittest.TestCase):
             patch.object(gki_fetch.time, "sleep") as sleep,
         ):
             tags = gki_fetch.fetch_latest_release_tags("android13", "5.10")
-        self.assertEqual(tags["2025-07"], "android13-5.10-2025-07_r4")
+        self.assertEqual(tags["2025-07"], ("android13-5.10-2025-07_r4", "abc"))
         self.assertEqual(run.call_count, 2)
         sleep.assert_called_once_with(2)
 
@@ -83,6 +86,31 @@ class ReleaseTagTests(unittest.TestCase):
         ):
             branches = gki_fetch.fetch_monthly_branches("android12", "5.10")
         self.assertEqual(branches, {"2026-08", "2023-06"})
+
+    def test_gitiles_failure_reads_exact_mirror_commit(self) -> None:
+        ref = "refs/tags/android13-5.10-2025-07_r4"
+        with (
+            patch.object(gki_fetch, "_gitiles_unavailable", False),
+            patch.object(gki_fetch, "try_fetch", side_effect=gki_fetch.FetchError("503")),
+            patch.object(gki_fetch.urllib.request, "urlopen", return_value=BytesIO(makefile(238).encode())) as urlopen,
+        ):
+            text = gki_fetch.fetch_ref_makefile(ref, "abc123")
+        self.assertEqual(text, makefile(238))
+        self.assertEqual(urlopen.call_args.args[0].full_url,
+                         f"{gki_fetch.MIRROR_URL}/abc123/Makefile")
+
+    def test_missing_mirror_commit_reads_google_git(self) -> None:
+        ref = "refs/heads/android13-5.10-lts"
+        missing = urllib.error.HTTPError("mirror", 404, "Not Found", None, None)
+        with (
+            patch.object(gki_fetch, "_gitiles_unavailable", True),
+            patch.object(gki_fetch, "list_remote_refs", return_value=f"abc123\t{ref}\n"),
+            patch.object(gki_fetch.urllib.request, "urlopen", side_effect=missing),
+            patch.object(gki_fetch, "fetch_git_makefile", return_value=makefile(260)) as fetch_git,
+        ):
+            text = gki_fetch.fetch_ref_makefile(ref)
+        self.assertEqual(text, makefile(260))
+        fetch_git.assert_called_once_with(ref)
 
     def test_existing_revision_and_new_month_are_updated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -102,19 +130,19 @@ class ReleaseTagTests(unittest.TestCase):
                 encoding="utf-8",
             )
             tags = {
-                "2025-07": "android13-5.10-2025-07_r4",
-                "2025-10": "android13-5.10-2025-10_r2",
+                "2025-07": ("android13-5.10-2025-07_r4", "abc123"),
+                "2025-10": ("android13-5.10-2025-10_r2", "def456"),
             }
             versions = {
-                tags["2025-07"]: makefile(238),
-                tags["2025-10"]: makefile(243),
+                tags["2025-07"][0]: makefile(238),
+                tags["2025-10"][0]: makefile(243),
             }
             with (
                 patch.object(update_data, "json_path", return_value=str(path)),
                 patch.object(update_data, "fetch_latest_release_tags", return_value=tags),
                 patch.object(update_data, "fetch_monthly_branches", return_value={"2025-08", "2025-09"}),
                 patch.object(update_data, "fetch_makefile", return_value=makefile(239)),
-                patch.object(update_data, "fetch_tag_makefile", side_effect=versions.get),
+                patch.object(update_data, "fetch_tag_makefile", side_effect=lambda tag, sha: versions.get(tag)),
                 patch.object(update_data, "fetch_lts", return_value=makefile(260)),
                 patch.object(update_data.time, "sleep"),
             ):
@@ -153,7 +181,7 @@ class ReleaseTagTests(unittest.TestCase):
             with (
                 patch.object(update_data, "json_path", return_value=str(path)),
                 patch.object(update_data, "fetch_latest_release_tags", return_value={
-                    "2025-07": "android13-5.10-2025-07_r4"
+                    "2025-07": ("android13-5.10-2025-07_r4", "abc123")
                 }),
                 patch.object(update_data, "fetch_monthly_branches", return_value=set()),
                 patch.object(update_data, "fetch_tag_makefile", return_value=makefile(238)),
@@ -166,6 +194,28 @@ class ReleaseTagTests(unittest.TestCase):
             self.assertTrue(changed)
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["entries"][0]["kernel"], "5.10.238")
+
+    def test_missing_months_do_not_fetch_makefiles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "5.15.json"
+            path.write_text(json.dumps({
+                "android_version": "android13",
+                "kernel_version": "5.15",
+                "entries": [{"date": "2025-07", "kernel": "5.15.180"}],
+                "lts": "5.15.200",
+            }), encoding="utf-8")
+            makefile_text = "VERSION = 5\nPATCHLEVEL = 15\nSUBLEVEL = 201\n"
+            with (
+                patch.object(update_data, "json_path", return_value=str(path)),
+                patch.object(update_data, "fetch_monthly_branches", return_value={"2025-09"}),
+                patch.object(update_data, "fetch_makefile", return_value=makefile_text) as fetch_makefile,
+                patch.object(update_data, "fetch_lts", return_value=makefile_text),
+                patch.object(update_data.time, "sleep"),
+            ):
+                update_data.update_target("android13", "5.15", "2025-07", "2025-09", "")
+            fetch_makefile.assert_called_once_with("android13", "5.15", "2025-09", "")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["entries"][-1], {"date": "2025-09", "kernel": "5.15.201"})
 
 
 if __name__ == "__main__":
