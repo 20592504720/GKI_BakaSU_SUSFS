@@ -108,7 +108,7 @@ android14-5.15.148-2024-05-r25-ReSukiSU-AnyKernel3.zip
 
 ## 致谢
 
-- [zzh20188](https://github.com/zzh20188)：曾经的上游 GKI 构建仓库作者，目前此仓库已脱离分支网络，zzh20188/GKI_KernelSU_SUSFS 将不再是此仓库上游
+- [zzh20188](https://github.com/zzh20188)：曾经的上游 GKI 构建仓库作者，目前此仓库已脱离分支网络，zzh20188/GKI_KernelSU_SUSFS 将不再是此仓库的上游仓库
 - [coolzyd9107](https://github.com/coolzyd9107)：本仓库维护者。
 - [zhuzhuzihan](https://github.com/zhuzhuzihan)：工作流修复及 Telegram Bot 开发与维护。
 - [TanakaLun](https://github.com/TanakaLun)：工作流修复与功能改进。
