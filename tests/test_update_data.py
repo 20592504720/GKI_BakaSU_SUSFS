@@ -18,8 +18,8 @@ import gki_fetch  # noqa: E402
 import update_data  # noqa: E402
 
 
-def makefile(sublevel: int) -> str:
-    return f"VERSION = 5\nPATCHLEVEL = 10\nSUBLEVEL = {sublevel}\n"
+def makefile(sublevel: int, patchlevel: int = 10) -> str:
+    return f"VERSION = 5\nPATCHLEVEL = {patchlevel}\nSUBLEVEL = {sublevel}\n"
 
 
 class ReleaseTagTests(unittest.TestCase):
@@ -204,18 +204,55 @@ class ReleaseTagTests(unittest.TestCase):
                 "entries": [{"date": "2025-07", "kernel": "5.15.180"}],
                 "lts": "5.15.200",
             }), encoding="utf-8")
-            makefile_text = "VERSION = 5\nPATCHLEVEL = 15\nSUBLEVEL = 201\n"
+            makefile_text = makefile(201, 15)
             with (
                 patch.object(update_data, "json_path", return_value=str(path)),
+                patch.object(update_data, "fetch_latest_release_tags", return_value={
+                    "2025-07": ("android13-5.15-2025-07_r5", "abc123")
+                }),
                 patch.object(update_data, "fetch_monthly_branches", return_value={"2025-09"}),
                 patch.object(update_data, "fetch_makefile", return_value=makefile_text) as fetch_makefile,
+                patch.object(update_data, "fetch_tag_makefile", return_value=makefile(185, 15)),
                 patch.object(update_data, "fetch_lts", return_value=makefile_text),
                 patch.object(update_data.time, "sleep"),
             ):
                 update_data.update_target("android13", "5.15", "2025-07", "2025-09", "")
             fetch_makefile.assert_called_once_with("android13", "5.15", "2025-09", "")
             data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["entries"][0], {
+                "date": "2025-07", "kernel": "5.15.185", "revision": "r5"
+            })
             self.assertEqual(data["entries"][-1], {"date": "2025-09", "kernel": "5.15.201"})
+
+    def test_android14_515_release_revision_is_independent(self) -> None:
+        self.assertIn(("android14", "5.15"), gki_fetch.TARGETS)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "5.15.json"
+            path.write_text(json.dumps({
+                "android_version": "android14",
+                "kernel_version": "5.15",
+                "entries": [{"date": "2024-05", "kernel": "5.15.148"}],
+                "lts": "5.15.195",
+            }), encoding="utf-8")
+            with (
+                patch.object(update_data, "json_path", return_value=str(path)),
+                patch.object(update_data, "fetch_latest_release_tags", return_value={
+                    "2024-05": ("android14-5.15-2024-05_r25", "abc123")
+                }),
+                patch.object(update_data, "fetch_monthly_branches", return_value=set()),
+                patch.object(update_data, "fetch_tag_makefile", return_value=makefile(148, 15)),
+                patch.object(update_data, "fetch_lts", return_value=makefile(217, 15)),
+                patch.object(update_data.time, "sleep"),
+            ):
+                changed = update_data.update_target(
+                    "android14", "5.15", "2024-05", "2024-05", ""
+                )
+            self.assertTrue(changed)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["entries"], [{
+                "date": "2024-05", "kernel": "5.15.148", "revision": "r25"
+            }])
+            self.assertEqual(data["lts"], "5.15.217")
 
 
 if __name__ == "__main__":

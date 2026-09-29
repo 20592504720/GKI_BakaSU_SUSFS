@@ -27,6 +27,7 @@ def update_target(android_ver: str, kernel_ver: str,
     path = json_path(android_ver, kernel_ver)
     end = get_end_date(date_end)
     is_k510 = (kernel_ver == "5.10")
+    has_release_tags = kernel_ver in ("5.10", "5.15")
 
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -46,7 +47,7 @@ def update_target(android_ver: str, kernel_ver: str,
 
     existing_by_date = {e["date"]: e for e in entries}
     all_dates = make_date_range(date_start, end)
-    if is_k510:
+    if has_release_tags:
         release_tags = fetch_latest_release_tags(android_ver, kernel_ver)
         monthly_branches = fetch_monthly_branches(android_ver, kernel_ver)
         for date in all_dates:
