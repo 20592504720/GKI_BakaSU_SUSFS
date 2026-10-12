@@ -88,6 +88,7 @@ Fork 仓库只生成 Actions 产物，不会向上游仓库发布 Release。
 | `build_bypass` | 额外构建 Bypass Image，与普通 Image 一起放入安装包。 |
 | `droidspaces` | 选择 Droidspaces 容器补丁：`off`、`678`、`123` 或 `345`。6.12 及以上使用上游的通用补丁。 |
 | `droidspaces_ntsync` | 在支持的组合中启用 NTSync，需同时启用 Droidspaces。当前没有 Android 17 / 6.18 补丁，该组合会自动跳过。 |
+| `use_nomount` | 集成 [NoMount](https://github.com/maxsteeel/nomount) 挂载元模块内核支持；使用时还需刷入配套的 NoMount 模块。清洁构建会跳过。 |
 
 Bypass 模式用于排查内核模块版本兼容问题，不用于绕过 root 检测。启用后会进行第二次完整编译，并增加构建时间。刷入时按安装脚本提示选择普通 Image 或 Bypass Image。
 
