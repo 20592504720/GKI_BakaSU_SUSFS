@@ -4,7 +4,7 @@
 
 基于 GitHub Actions 构建 Android GKI 内核，集成 BakaSU 与 SUSFS。
 
-简体中文 / [English](https://github.com/coolzyd9107/GKI_BakaSU_SUSFS/README_EN.md)
+简体中文 / [English](https://github.com/coolzyd9107/GKI_BakaSU_SUSFS/tree/main/README_EN.md)
 
 [![Release](https://img.shields.io/github/v/release/coolzyd9107/GKI_BakaSU_SUSFS?label=Release&style=flat-square&logo=github&logoColor=white&color=2ea44f)](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/releases)
 [![构建内核](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/actions/workflows/main.yml/badge.svg)](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/actions/workflows/main.yml)
