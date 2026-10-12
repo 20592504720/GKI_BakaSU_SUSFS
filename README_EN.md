@@ -1,6 +1,7 @@
 <div align="center">
 # GKI BakaSU SUSFS
 Building Android GKI kernels integrated with BakaSU and SUSFS via GitHub Actions.
+[简体中文](https://github.com/coolzyd9107/GKI_BakaSU_SUSFS/tree/main/README_EN) / English
 [![Release](https://img.shields.io/github/v/release/coolzyd9107/GKI_BakaSU_SUSFS?label=Release&style=flat-square&logo=github&logoColor=white&color=2ea44f)](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/releases)
 [![Build Kernel](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/actions/workflows/main.yml/badge.svg)](https://github.com/zhuzhuzihan/GKI_BakaSU_SUSFS/actions/workflows/main.yml)
 [![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Channel&color=0088cc)](https://t.me/BakaSUKernelBuilds)
