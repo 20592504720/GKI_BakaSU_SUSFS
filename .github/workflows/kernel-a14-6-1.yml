@@ -1,4 +1,4 @@
-name: 内核构建 - Android 14 (6.1)
+name: Build Kernel - Android 14 (6.1)
 
 # 适配 Node.js 24
 env:

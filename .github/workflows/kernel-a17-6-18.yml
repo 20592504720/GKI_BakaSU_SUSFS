@@ -1,4 +1,4 @@
-name: 内核构建 - Android 17 (6.18)
+name: Build Kernel - Android 17 (6.18)
 
 # 适配 Node.js 24
 env:

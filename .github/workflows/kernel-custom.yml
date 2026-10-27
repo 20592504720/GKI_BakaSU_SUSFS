@@ -1,4 +1,4 @@
-name: Android 内核构建-自定义
+name: Build Custom Android Kernel
 
 # 适配 Node.js 24
 env:

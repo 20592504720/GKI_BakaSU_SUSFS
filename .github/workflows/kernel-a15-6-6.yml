@@ -1,4 +1,4 @@
-name: 内核构建 - Android 15 (6.6)
+name: Build Kernel - Android 15 (6.6)
 
 # 适配 Node.js 24
 env:

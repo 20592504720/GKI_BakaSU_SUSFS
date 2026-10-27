@@ -1,4 +1,4 @@
-name: 内核构建 - Android 12 (5.10)
+name: Build Kernel - Android 12 (5.10)
 
 # 适配 Node.js 24
 env:

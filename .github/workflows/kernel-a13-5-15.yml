@@ -1,4 +1,4 @@
-name: 内核构建 - 5.15 (Android 13/14)
+name: Build Kernel - 5.15 (Android 13/14)
 
 # 适配 Node.js 24
 env:
